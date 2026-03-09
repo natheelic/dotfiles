@@ -5,19 +5,47 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 autoload bashcompinit && bashcompinit
 autoload -Uz compinit
 compinit
-source <(kubectl completion zsh)
-complete -C '/usr/local/bin/aws_completer' aws
+if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+	eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+if command -v kubectl &> /dev/null; then
+	source <(kubectl completion zsh)
+fi
+if command -v aws_completer &> /dev/null; then
+	complete -C "$(command -v aws_completer)" aws
+elif [ -f '/usr/local/bin/aws_completer' ]; then
+	complete -C '/usr/local/bin/aws_completer' aws
+fi
 
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-bindkey '^w' autosuggest-execute
-bindkey '^e' autosuggest-accept
-bindkey '^u' autosuggest-toggle
+_zsh_autosuggestions_file=""
+if command -v brew &> /dev/null; then
+	_zsh_autosuggestions_file="$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+elif [ -f '/usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh' ]; then
+	_zsh_autosuggestions_file='/usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh'
+elif [ -f '/usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh' ]; then
+	_zsh_autosuggestions_file='/usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh'
+fi
+if [ -n "$_zsh_autosuggestions_file" ] && [ -f "$_zsh_autosuggestions_file" ]; then
+	source "$_zsh_autosuggestions_file"
+	if zle -la | grep -q '^autosuggest-execute$'; then
+		bindkey '^w' autosuggest-execute
+	fi
+	if zle -la | grep -q '^autosuggest-accept$'; then
+		bindkey '^e' autosuggest-accept
+	fi
+	if zle -la | grep -q '^autosuggest-toggle$'; then
+		bindkey '^u' autosuggest-toggle
+	fi
+fi
+unset _zsh_autosuggestions_file
 bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
-eval "$(starship init zsh)"
-export STARSHIP_CONFIG=~/.config/starship/starship.toml
+if command -v starship &> /dev/null; then
+	eval "$(starship init zsh)"
+	export STARSHIP_CONFIG=~/.config/starship/starship.toml
+fi
 
 # You may need to manually set your language environment
 export LANG=en_US.UTF-8
@@ -25,7 +53,11 @@ export LANG=en_US.UTF-8
 export EDITOR=/opt/homebrew/bin/nvim
 
 alias la=tree
-alias cat=bat
+if command -v bat &> /dev/null; then
+	alias cat=bat
+elif command -v batcat &> /dev/null; then
+	alias cat=batcat
+fi
 
 # Git
 alias gc="git commit -m"
@@ -67,7 +99,7 @@ alias v="/Users/omerxx/.nix-profile/bin/nvim"
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
 
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:/Users/omerxx/.cargo/bin
+export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:/Users/omerxx/.cargo/bin:$PATH
 
 alias cl='clear'
 
@@ -149,8 +181,16 @@ fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
  fi
  # End Nix
 
-export XDG_CONFIG_HOME="/Users/omerxx/.config"
+export XDG_CONFIG_HOME="$HOME/.config"
 
-eval "$(zoxide init zsh)"
-eval "$(atuin init zsh)"
-eval "$(direnv hook zsh)"
+if command -v zoxide &> /dev/null; then
+	eval "$(zoxide init zsh)"
+fi
+if command -v atuin &> /dev/null; then
+	eval "$(atuin init zsh)"
+fi
+if command -v direnv &> /dev/null; then
+	eval "$(direnv hook zsh)"
+fi
+
+neofetch
